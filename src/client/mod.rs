@@ -1,11 +1,15 @@
 use std::future::Future;
+use std::pin::Pin;
 use std::sync::Arc;
 
 use futures::Stream;
 use futures::stream::StreamExt;
-use hyper::{Client, Uri};
-use hyper::body::HttpBody;
+use http_body_util::Empty;
+use hyper::body::Body;
+use hyper::Uri;
 use hyper_tls::HttpsConnector;
+use hyper_util::client::legacy::Client;
+use hyper_util::rt::TokioExecutor;
 use serde::de::DeserializeOwned;
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use tokio::sync::RwLock;
@@ -122,7 +126,7 @@ impl MegaphoneClient {
         let handle = tokio::spawn(async move {
             loop {
                 let connector = HttpsConnector::new();
-                let client = Client::builder().build::<_, hyper::Body>(connector);
+                let client = Client::builder(TokioExecutor::new()).build::<_, Empty<bytes::Bytes>>(connector);
 
                 let mut resp = match client.get(read_uri.clone()).await {
                     Ok(resp) => resp,
@@ -131,8 +135,10 @@ impl MegaphoneClient {
                         break;
                     }
                 };
-                while let Some(data_chunk_res) = resp.body_mut().data().await {
-                    match data_chunk_res.map(|bytes| String::from_utf8(bytes.to_vec())) {
+
+                let mut pinned_body = Pin::new(resp.body_mut());
+                while let Some(data_chunk_res) = futures::future::poll_fn(|cx| pinned_body.as_mut().poll_frame(cx)).await {
+                    match data_chunk_res.map(|frame| frame.data_ref().map(|bytes| String::from_utf8(bytes.to_vec())).unwrap_or_else(|| Ok(String::new()))) {
                         Err(err) => log::warn!("Error in received chunk - {err}"),
                         Ok(Err(err)) => log::warn!("Error parsing string from chunk - {err}"),
                         Ok(Ok(msg)) => {
