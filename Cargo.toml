@@ -4,11 +4,11 @@ version = "0.9.6"
 edition = "2021"
 
 authors = ["Davide Ghilardi <dghila@d71.dev>"]
-description = "Reverse proxy for long running requests and server streaming"
-keywords = [ "http", "reverse-proxy", "infrastructure", "cloud" ]
+description = "Client library that can be used to subscribe to megaphone channels"
+keywords = [ "http", "client", "megaphone", "async", "cloud" ]
 repository = "https://github.com/dghilardi/megaphone-client"
 license = "MIT"
-readme = "../README.md"
+readme = "README.md"
 
 [dependencies]
 chrono = { version = "0.4.31", features = ["serde"] }
