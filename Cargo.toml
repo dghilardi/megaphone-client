@@ -6,7 +6,7 @@ edition = "2021"
 authors = ["Davide Ghilardi <dghila@d71.dev>"]
 description = "Reverse proxy for long running requests and server streaming"
 keywords = [ "http", "reverse-proxy", "infrastructure", "cloud" ]
-repository = "https://github.com/dghilardi/megaphone"
+repository = "https://github.com/dghilardi/megaphone-client"
 license = "MIT"
 readme = "../README.md"
 
