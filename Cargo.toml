@@ -40,6 +40,3 @@ required-features = ["examples"]
 
 [dev-dependencies]
 reqwest = { version = "0.11.22", features = ["json"] }
-
-[build-dependencies]
-tonic-build = "0.10"
