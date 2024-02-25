@@ -1,0 +1,11 @@
+[vcs]
+software = "Git"
+
+[modules.megaphone]
+path = "."
+packageManager = "Cargo"
+main = true
+
+[modules.megaphone.hooks.after_rel]
+build = ["cargo", "build"]
+test = ["cargo", "test"]
