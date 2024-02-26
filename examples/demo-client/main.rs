@@ -11,11 +11,11 @@ struct NewChatMessagePayload {
     message: String,
 }
 
-async fn initialize_chat_channel(channel_id: Option<String>) -> anyhow::Result<StreamSpec> {
+async fn initialize_chat_channel(channel_address: Option<String>) -> anyhow::Result<StreamSpec> {
     let http_client = reqwest::Client::new();
 
     let mut req_builder = http_client.post("http://localhost:3080/room/test");
-    if let Some(channel) = channel_id {
+    if let Some(channel) = channel_address {
         req_builder = req_builder.header("use-channel", channel);
     }
     let res = req_builder.send()

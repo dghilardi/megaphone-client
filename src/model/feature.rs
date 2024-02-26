@@ -32,7 +32,7 @@ impl Feature {
             return None;
         }
         let mut num_bytes = [0u8; 4];
-        for (idx, b) in bytes.into_iter().rev().enumerate() {
+        for (idx, b) in bytes.iter().rev().enumerate() {
             num_bytes[3-idx] = *b;
         }
         Some(Self(u32::from_be_bytes(num_bytes)))
@@ -40,7 +40,7 @@ impl Feature {
 
     pub fn serialize(&self) -> String {
         let bytes = self.bytes();
-        hex::encode(&bytes)
+        hex::encode(bytes)
             .trim_start_matches('0')
             .to_string()
     }
@@ -51,7 +51,7 @@ impl Feature {
         } else {
             String::from(s)
         };
-        let bytes = hex::decode(&encoded).ok()?;
+        let bytes = hex::decode(encoded).ok()?;
 
         Self::from_bytes(&bytes)
     }

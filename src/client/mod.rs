@@ -25,14 +25,14 @@ mod error;
 pub mod model;
 
 struct StreamSubscription {
-    channel_id: String,
+    channel_address: String,
     stream_id: String,
     tx: UnboundedSender<EventDto>,
 }
 
 pub struct MegaphoneClient {
     url: Arc<RwLock<String>>,
-    channel_id: Arc<RwLock<Option<String>>>,
+    channel_address: Arc<RwLock<Option<String>>>,
     event_buffer: Arc<RwLock<CircularBuffer<String>>>,
     subscriptions: Arc<RwLock<Vec<StreamSubscription>>>,
 }
@@ -41,7 +41,7 @@ impl MegaphoneClient {
     pub fn new(url: &str, buf_len: usize) -> Self {
         Self {
             url: Arc::new(RwLock::new(String::from(url))),
-            channel_id: Arc::new(Default::default()),
+            channel_address: Arc::new(Default::default()),
             event_buffer: Arc::new(RwLock::new(CircularBuffer::new(buf_len))),
             subscriptions: Arc::new(RwLock::new(Vec::new())),
         }
@@ -87,12 +87,12 @@ impl MegaphoneClient {
         let (tx, rx) = tokio::sync::mpsc::unbounded_channel::<EventDto>();
         {
             let url_guard = self.url.read().await;
-            let mut channel_guard = self.channel_id.write().await;
+            let mut channel_guard = self.channel_address.write().await;
             let mut subscriptions_guard = self.subscriptions.write().await;
             let channel_spec = initializer(channel_guard.clone()).await?;
             for stream_id in channel_spec.streams {
                 subscriptions_guard.push(StreamSubscription {
-                    channel_id: channel_spec.channel.clone(),
+                    channel_address: channel_spec.channel.clone(),
                     stream_id,
                     tx: tx.clone(),
                 });
@@ -101,7 +101,7 @@ impl MegaphoneClient {
                 *channel_guard = Some(channel_spec.channel);
                 drop(subscriptions_guard);
                 drop(channel_guard);
-                Self::spawn_reader(url_guard.as_str(), self.channel_id.clone(), self.event_buffer.clone(), self.subscriptions.clone()).await?;
+                Self::spawn_reader(url_guard.as_str(), self.channel_address.clone(), self.event_buffer.clone(), self.subscriptions.clone()).await?;
             }
         }
         Ok(rx)
@@ -109,16 +109,16 @@ impl MegaphoneClient {
 
     async fn spawn_reader(
         url: &str,
-        channel_id: Arc<RwLock<Option<String>>>,
+        consumer_address: Arc<RwLock<Option<String>>>,
         event_buffer: Arc<RwLock<CircularBuffer<String>>>,
         subscriptions: Arc<RwLock<Vec<StreamSubscription>>>,
     ) -> Result<JoinHandle<()>, Error> {
-        let channel_id_guard = channel_id.read().await;
-        let current_channel_id = channel_id_guard.clone().expect("channel-id is not defined");
-        drop(channel_id_guard);
+        let consumer_address_guard = consumer_address.read().await;
+        let current_consumer_address = consumer_address_guard.clone().expect("channel-id is not defined");
+        drop(consumer_address_guard);
 
         let read_uri: Uri = {
-            let url = format!("{}/{}", url.trim_matches('/'), current_channel_id);
+            let url = format!("{}/{}", url.trim_matches('/'), current_consumer_address);
             url
                 .parse()
                 .map_err(|_err| Error::InvalidUrl { url })?
@@ -151,7 +151,7 @@ impl MegaphoneClient {
                                         if !buf_guard.contains(&evt.event_id) {
                                             sub_guard
                                                 .iter()
-                                                .filter(|s| s.stream_id.eq(&evt.stream_id) && s.channel_id.eq(&current_channel_id))
+                                                .filter(|s| s.stream_id.eq(&evt.stream_id) && s.channel_address.eq(&current_consumer_address))
                                                 .filter(|s| !s.tx.is_closed())
                                                 .for_each(|s| match s.tx.send(evt.clone()) {
                                                     Ok(_) => log::debug!("Message sent on stream {} listener", evt.stream_id),
@@ -166,20 +166,20 @@ impl MegaphoneClient {
                         }
                     }
                 }
-                if channel_id.read().await.as_ref().map(|channel| channel.ne(&current_channel_id)).unwrap_or(true) {
-                    log::warn!("Channel id changed during polling. Ending poller for channel {current_channel_id}");
+                if consumer_address.read().await.as_ref().map(|channel| channel.ne(&current_consumer_address)).unwrap_or(true) {
+                    log::warn!("Channel id changed during polling. Ending poller for channel {current_consumer_address}");
                     break;
-                } else if subscriptions.read().await.iter().all(|s| !s.tx.is_closed() && s.channel_id.ne(&current_channel_id)) {
-                    log::debug!("No subscriptions left for channel {current_channel_id}. Ending poller");
+                } else if subscriptions.read().await.iter().all(|s| !s.tx.is_closed() && s.channel_address.ne(&current_consumer_address)) {
+                    log::debug!("No subscriptions left for channel {current_consumer_address}. Ending poller");
                     break;
                 }
             }
-            let mut channel_guard = channel_id.write().await;
+            let mut consumer_addr_guard = consumer_address.write().await;
             let mut subscriptions_guard = subscriptions.write().await;
-            if channel_guard.as_ref().map(|c| c.eq(&current_channel_id)).unwrap_or(false) {
-                *channel_guard = None;
+            if consumer_addr_guard.as_ref().map(|c| c.eq(&current_consumer_address)).unwrap_or(false) {
+                *consumer_addr_guard = None;
             }
-            subscriptions_guard.retain(|s| !s.tx.is_closed() && s.channel_id.ne(&current_channel_id));
+            subscriptions_guard.retain(|s| !s.tx.is_closed() && s.channel_address.ne(&current_consumer_address));
         });
         Ok(handle)
     }

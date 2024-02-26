@@ -7,14 +7,19 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize)]
 #[serde(rename_all="camelCase")]
 pub struct ChannelCreateResDto {
+    #[deprecated(since = "0.10.0", note = "use producer_address and consumer_address instead")]
     pub channel_id: String,
+    pub producer_address: String,
+    pub consumer_address: String,
+    #[deprecated(since = "0.10.0", note = "agent name is embedded in producer_address and consumer_address")]
     pub agent_name: String,
 }
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct WriteBatchReqDto {
-    pub channel_ids: HashSet<String>,
+    #[serde(alias = "channelIds")]
+    pub channels: HashSet<String>,
     pub messages: Vec<ChanMessage>,
 }
 
@@ -41,13 +46,14 @@ pub struct MessageDeliveryFailure {
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ChanExistsReqDto {
-    pub channel_ids: HashSet<String>,
+    #[serde(alias = "channelIds")]
+    pub channels: HashSet<String>,
 }
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ChanExistsResDto {
-    pub channel_ids: HashMap<String, bool>,
+    pub channels: HashMap<String, bool>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -68,7 +74,7 @@ fn default_limit() -> usize {
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ChannelInfoDto {
-    pub channel_id: String,
+    pub address: String,
     pub agent_id: String,
 }
 
@@ -77,7 +83,7 @@ impl FromStr for ChannelInfoDto {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(Self {
-            channel_id: String::from(s),
+            address: String::from(s),
             agent_id: s.split('.')
                 .next()
                 .map(ToString::to_string)
