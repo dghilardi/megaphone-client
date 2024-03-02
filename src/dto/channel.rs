@@ -4,7 +4,7 @@ use std::str::FromStr;
 use anyhow::anyhow;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 #[serde(rename_all="camelCase")]
 pub struct ChannelCreateResDto {
     #[deprecated(since = "0.10.0", note = "use producer_address and consumer_address instead")]
@@ -15,7 +15,7 @@ pub struct ChannelCreateResDto {
     pub agent_name: String,
 }
 
-#[derive(Deserialize)]
+#[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct WriteBatchReqDto {
     #[serde(alias = "channelIds")]
@@ -23,19 +23,19 @@ pub struct WriteBatchReqDto {
     pub messages: Vec<ChanMessage>,
 }
 
-#[derive(Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct ChanMessage {
     pub stream_id: String,
     pub body: serde_json::Value,
 }
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct WriteBatchResDto {
     pub failures: Vec<MessageDeliveryFailure>,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MessageDeliveryFailure {
     pub channel: String,
@@ -43,14 +43,14 @@ pub struct MessageDeliveryFailure {
     pub reason: String,
 }
 
-#[derive(Deserialize)]
+#[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ChanExistsReqDto {
     #[serde(alias = "channelIds")]
     pub channels: HashSet<String>,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ChanExistsResDto {
     pub channels: HashMap<String, bool>,
