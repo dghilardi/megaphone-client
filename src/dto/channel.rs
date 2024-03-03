@@ -8,10 +8,12 @@ use serde::{Deserialize, Serialize};
 #[serde(rename_all="camelCase")]
 pub struct ChannelCreateResDto {
     #[deprecated(since = "0.10.0", note = "use producer_address and consumer_address instead")]
+    #[serde(default)]
     pub channel_id: String,
     pub producer_address: String,
     pub consumer_address: String,
     #[deprecated(since = "0.10.0", note = "agent name is embedded in producer_address and consumer_address")]
+    #[serde(default)]
     pub agent_name: String,
 }
 
