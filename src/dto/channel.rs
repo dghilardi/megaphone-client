@@ -4,6 +4,15 @@ use std::str::FromStr;
 use anyhow::anyhow;
 use serde::{Deserialize, Serialize};
 
+#[derive(Serialize, Deserialize, Default)]
+#[serde(rename_all="camelCase")]
+pub struct ChannelCreateReqDto {
+    /// Protocols supported by the client
+    /// sorted by preference (first is the preferred)
+    #[serde(default)]
+    pub protocols: Vec<String>,
+}
+
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all="camelCase")]
 pub struct ChannelCreateResDto {
@@ -15,6 +24,9 @@ pub struct ChannelCreateResDto {
     #[deprecated(since = "0.10.0", note = "agent name is embedded in producer_address and consumer_address")]
     #[serde(default)]
     pub agent_name: String,
+    /// Protocols supported by the channel
+    #[serde(default)]
+    pub protocols: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize)]
