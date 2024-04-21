@@ -18,7 +18,7 @@ anyhow = "1.0.75"
 rand = "0.8.5"
 
 env_logger = { version = "0.11.2", optional = true }
-log = { version = "0.4.17", optional = true }
+log = { version = "0.4.21", optional = true }
 
 thiserror = { version = "1.0.37", optional = true }
 tokio = { version = "1.21.2", features = ["rt", "macros"], optional = true }
